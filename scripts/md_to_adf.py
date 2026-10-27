@@ -11,6 +11,7 @@
   > [!NOTE] / [!INFO] / [!WARNING] / [!SUCCESS] / [!ERROR]  패널(이어지는 > 줄 포함)
   ![설명](파일.png)            업로드 후 인라인 이미지
   ![설명](attachment:43475)    이미 올린 첨부를 인라인 이미지로
+  ![설명](파일.sql)            이미지가 아닌 파일은 업로드 후 파일 카드(개발자 확인용 쿼리 등)
   인라인: **굵게**  `코드`  [글자](https://링크)  @[표시 이름](accountId) → 멘션(알림)
 빈 줄이 문단을 나누고, 문단 안 줄바꿈은 줄바꿈(hardBreak)으로 유지한다.
 """
@@ -148,7 +149,7 @@ def main():
 
     def image(alt, src):
         if not a.key:
-            sys.exit(f"이미지 {src}: --key 필요")
+            sys.exit(f"첨부 {src}: --key 필요")
         if "cred" not in state:
             import jira_inline_image as jii
             state["jii"], state["cred"] = jii, jii.auth()
@@ -157,9 +158,9 @@ def main():
             r = jii.resolve(a.key, src.split(":", 1)[1], cred, a.width, existing=True)
         else:
             r = jii.resolve(a.key, os.path.join(base, src), cred, a.width)
-        if alt:
+        if alt and r["node"]["type"] == "mediaSingle":
             r["node"]["content"][0]["attrs"]["alt"] = alt
-        print(f"이미지 {src} → attachment {r['attachmentId']}", file=sys.stderr)
+        print(f"첨부 {src} → attachment {r['attachmentId']}", file=sys.stderr)
         return r["node"]
 
     doc = convert(md, image)

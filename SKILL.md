@@ -1,6 +1,6 @@
 ---
 name: jira-comment-format
-description: Jira 이슈·하위 티켓 설명과 댓글을 acli로 작성·수정할 때 쓰는 규칙. Jira 글은 기획·QA용만 쓰고(요약 먼저, 요청 → 결과 표, 작동 화면·데이터 전·후 캡처, 확인 방법, 요청자 멘션, 결정 요청), 쿼리·흐름도·커밋·빌드 같은 개발자용 상세는 Jira에 남기지 않고 별도 개발자 노트 보드에 Jira 티켓 1건=노트 항목 1건, Jira 댓글 1건=노트 댓글 1건으로 남긴다(dev_note.py). 게시 전(md_to_adf.py)과 되읽기(check_adf.py)에 기획자용 검사(planner_lint.py)를 한다. Jira 생성·정리·서식 개선·댓글 게시·완료 보고·결함 보고·스크린샷/이미지 첨부·배포 단계별 상태 이동 요청에 사용.
+description: Jira 이슈·하위 티켓 설명과 댓글을 acli로 작성·수정할 때 쓰는 규칙. Jira 글은 기획·QA용만 쓰고(요약 먼저, 요청 → 결과 표, 작동 화면·데이터 전·후 캡처, 확인 방법, 요청자 멘션, 결정 요청), 개발자가 확인할 수 있는 조회 쿼리는 본문 대신 Jira 첨부 .sql 파일로 붙이며, 흐름도·커밋·빌드 같은 나머지 개발자용 상세는 Jira에 남기지 않고 별도 개발자 노트 보드에 Jira 티켓 1건=노트 항목 1건, Jira 댓글 1건=노트 댓글 1건으로 남긴다(dev_note.py). 게시 전(md_to_adf.py)과 되읽기(check_adf.py)에 기획자용 검사(planner_lint.py)를 한다. Jira 생성·정리·서식 개선·댓글 게시·완료 보고·결함 보고·스크린샷/이미지 첨부·배포 단계별 상태 이동 요청에 사용.
 ---
 
 # jira-comment-format
@@ -43,8 +43,8 @@ Jira 글(댓글·이슈 설명)은 기획·QA가 읽는다. **개발자용 내�
 
 | 어디에 | 무엇을 | 도구 |
 |---|---|---|
-| Jira | 요청하신 것 → 지금 상태, `요청 항목 \| 수정 전 \| 수정 후` 표, 작동 화면 전·후 캡처, 데이터 전·후 캡처(이미지 + 쉬운 말 한 줄), 확인 방법(환경·계정·메뉴), 알아 둘 점, 결정 요청 | `asis_tobe.py`·`data_table.py` → `md_to_adf.py`(게시 전 기획자용 검사) → acli → `check_adf.py` |
-| 노트 보드 | Jira 게시본 사본 + 쿼리 원문, 논리 흐름도, API·명령, 커밋·브랜치·빌드, 시험 건수, 운영 확인·실행 SQL·롤백, 범위 밖 관찰·권고 | `flow_diagram.py` → `dev_note.py` |
+| Jira | 요청하신 것 → 지금 상태, `요청 항목 \| 수정 전 \| 수정 후` 표, 작동 화면 전·후 캡처, 데이터 전·후 캡처(이미지 + 쉬운 말 한 줄), 확인 방법(환경·계정·메뉴), 알아 둘 점, 결정 요청, **개발자 확인용 쿼리 첨부 파일(`.sql` 파일 카드)** | `asis_tobe.py`·`data_table.py` → `md_to_adf.py`(게시 전 기획자용 검사·첨부 업로드) → acli → `check_adf.py` |
+| 노트 보드 | Jira 게시본 사본 + 쿼리 원문(같은 `.sql` 첨부), 논리 흐름도, API·명령, 커밋·브랜치·빌드, 시험 건수, 운영 확인·실행 SQL·롤백, 범위 밖 관찰·권고 | `flow_diagram.py` → `dev_note.py` |
 
 노트 구조: Jira 티켓 1건 = 노트 항목 1건(`[Jira] <KEY> <요약>`, 라벨 `jira-<KEY>`, 상태 Done), Jira 댓글 1건 = 그 항목의 노트 댓글 1건(첫 줄 `Jira <KEY> 댓글 <ID>`, `## Jira 게시본` + `## 개발자용 상세`). 같은 Jira 댓글로 다시 실행하면 그 노트 댓글을 고치고, 같은 이름의 첨부는 다시 올리지 않는다. 노트에는 Jira 링크를 넣지 않는다(키·댓글 번호만 글자로, `dev_note.py`가 자동으로 뺀다). 노트 쓰기는 `dev_note.py`로만 한다.
 
@@ -72,6 +72,7 @@ Jira 글(댓글·이슈 설명)은 기획·QA가 읽는다. **개발자용 내�
 - 커밋 해시, `#빌드`, 브랜치 이름(`fix/…`·`feature/…` 등), API·SQL·curl·쿼리·테이블 같은 개발 용어(한국어·영어), 코드·열 이름, 코드 블록·코드 서식.
 - 저장소·서비스 이름처럼 프로젝트마다 다른 이름은 `PLANNER_LINT_EXTRA`(config.env) 또는 `--pattern 정규식`으로 더한다.
 - `댓글 12345` 같은 번호 참조. Jira 화면에는 댓글 번호가 보이지 않는다. `[앞서 드린 확인 요청](https://<your-site>/browse/<KEY>?focusedCommentId=<ID>)` 링크와 한 줄 요약으로 쓴다.
+- 쿼리를 본문·코드 블록에 넣는 것. 개발자가 확인할 수 있는 쿼리는 아래 "개발자 확인용 쿼리 첨부"대로 파일로 붙인다.
 - 800자 초과(공백·멘션·이미지 제외). 이슈 설명은 `--max-chars 0`.
 - 기획자도 쓰는 말이라고 확인한 용어만 `--allow 용어`로 연다.
 
@@ -82,7 +83,7 @@ Jira 글(댓글·이슈 설명)은 기획·QA가 읽는다. **개발자용 내�
 캡처 규칙:
 
 - **작동 화면(Jira)**: 수정 전·후를 **한 장**으로 합친다(`asis_tobe.py`). 위 빨간 띠 `수정 전 (개발계) — 무엇이 문제인지`, 아래 초록 띠 `수정 후 (개발계) — 무엇이 바뀌었는지`. 바뀐 곳에 테두리(전=빨강, 후=초록)를 치고, 맨 아래 회색 캡션에 **환경·화면 경로·계정·일자**를 적는다. 운영 화면은 캡처하지 않는다. 실제 사용자 이름은 회색으로 가린다(테스트 계정명은 유지 가능). 화면이 없는 순수 배치·백엔드 티켓은 Jira에 결과 문장만 쓴다.
-- **데이터 변화(Jira 이미지 + 노트 쿼리)**: 실데이터 조회 결과를 엑셀 형태로 캡처해(`data_table.py`) Jira에 넣고, 바로 위에 쉬운 말 한 줄(예: "글 551건이 쓴 사람에게 연결, 빠진 글 0건")을 쓴다. `spec.json`의 `"env"`에 조회 환경(`개발(dev) DB · <DB 호스트>`, `스테이징(staging) DB`, `운영(prod) DB 조회 결과`)을 넣고, `수정 전 (As-Is)`(빨강)·`수정 후 (To-Be)`(초록) 시트의 바뀐 셀에 `hit: true`를 준다. 쿼리 원문은 이미지·Jira에 넣지 않고 노트 댓글에 ```` ```sql ```` 코드 블록으로 넣는다. 사용자 ID는 앞 8자만 노출한다.
+- **데이터 변화(Jira 이미지 + 노트 쿼리)**: 실데이터 조회 결과를 엑셀 형태로 캡처해(`data_table.py`) Jira에 넣고, 바로 위에 쉬운 말 한 줄(예: "글 551건이 쓴 사람에게 연결, 빠진 글 0건")을 쓴다. `spec.json`의 `"env"`에 조회 환경(`개발(dev) DB · <DB 호스트>`, `스테이징(staging) DB`, `운영(prod) DB 조회 결과`)을 넣고, `수정 전 (As-Is)`(빨강)·`수정 후 (To-Be)`(초록) 시트의 바뀐 셀에 `hit: true`를 준다. 쿼리 원문은 이미지·Jira 본문에 넣지 않고, 같은 Jira 댓글에 `.sql` 첨부 파일로 붙인다(아래 절). 노트에는 같은 파일을 첨부하고 코드 블록 사본도 둔다. 사용자 ID는 앞 8자만 노출한다.
 - **논리 흐름(노트)**: 수정 전(원인·오류 시나리오)과 수정 후(해결 흐름)를 두 줄로 대조한다(`flow_diagram.py`). 동작이 갈리는 단계에 `hit: true`.
 - 파일명은 `<키번호>_<항목>_<요약>.png`처럼 첨부 목록에서도 무엇인지 알 수 있게 짓는다.
 
@@ -101,7 +102,7 @@ Jira 글(댓글·이슈 설명)은 기획·QA가 읽는다. **개발자용 내�
 - 수정이 바꾸는 상황이 데이터에 없으면 그 상황을 만든 뒤 찍는다. 외부 장애로 실제 행동을 못 하면 그 장애를 타지 않는 경로로 같은 시나리오를 만들고, 그것도 안 되면 사용자 승인 후 SQL로 넣고 그 사실을 밝힌다.
 - 화면 숫자마다 출처(배치 결과 vs API)를 코드로 확인해, 수정 전 캡처가 어느 부분까지 수정 전 상태인지 적는다.
 
-확인 쿼리(노트 코드 블록): 조회 전용 SELECT(판정용 집계 1문장 + 필요하면 상세 1문장), 입력은 맨 위 CTE 한 곳(기본값=제보 사례), `수정전_계산 | 수정후_계산 | 화면_저장값 | 판정` 열, 사용자 ID는 앞 8자만(`LIKE 'abcd1234%'`처럼 써서 원문에도 전체 ID를 넣지 않는다), 맨 위 `--` 주석 1~2줄에 무엇을 보는지와 판정 기준(예: `수정 후 0행`). dev/staging에서 먼저 실행해 결과는 `data_table.py` 캡처로 Jira 본문에 넣는다.
+확인 쿼리(Jira `.sql` 첨부 + 노트 사본): 조회 전용 SELECT(판정용 집계 1문장 + 필요하면 상세 1문장), 입력은 맨 위 CTE 한 곳(기본값=제보 사례), `수정전_계산 | 수정후_계산 | 화면_저장값 | 판정` 열, 사용자 ID는 앞 8자만(`LIKE 'abcd1234%'`처럼 써서 원문에도 전체 ID를 넣지 않는다), 맨 위 `--` 주석 1~2줄에 무엇을 보는지와 판정 기준(예: `수정 후 0행`). dev/staging에서 먼저 실행해 결과는 `data_table.py` 캡처로 Jira 본문에 넣는다.
 
 ```bash
 S=<이 스킬 디렉터리>/scripts      # 예: ~/.agents/skills/jira-comment-format/scripts
@@ -113,11 +114,23 @@ python3 $S/asis_tobe.py before.png after.png -o 101_1_화면_임시저장_전후
   --caption "환경: 개발계 · 메뉴 > 목록 화면 · 계정 <테스트 계정> · YYYY-MM-DD"
 # Jira: 데이터 전·후 엑셀 캡처 (spec.json의 env에 환경·DB 호스트, 쿼리 원문은 노트)
 python3 $S/data_table.py data_spec.json -o 101_2_데이터_전후.png
+# Jira 첨부: 개발자 확인용 쿼리 (조회 전용, 맨 위 -- 주석에 무엇을 보는지·판정 기준)
+#   101_4_확인.sql
 # 노트: 논리 흐름도
 python3 $S/flow_diagram.py flow_spec.json -o 101_3_논리흐름_전후.png
 ```
 
 넓은 화면은 위아래(`--layout stack`, 기본), 좁은 화면은 `--layout side`.
+
+### 개발자 확인용 쿼리 첨부
+
+개발자가 직접 돌려 확인할 수 있는 쿼리는 Jira 본문에 넣지 않고 **같은 Jira 댓글에 첨부 파일로** 붙인다. 기획자는 본문만 읽고, 개발자는 파일을 내려받아 바로 실행한다.
+
+- 대상: 조회 전용 확인 쿼리(위 "확인 쿼리" 규칙). 데이터 보정·쓰기·롤백 SQL과 운영 실행 순서는 Jira에 붙이지 않고 노트에만 둔다.
+- 파일: `<키번호>_<항목>_확인.sql`. 맨 위 `--` 주석 1~2줄에 무엇을 보는지·판정 기준·실행한 환경(`개발(dev) DB · <DB 호스트>`)을 쓴다. 설명 줄은 모두 `-- `로 시작해 파일을 그대로 실행할 수 있게 한다. 사용자 ID는 앞 8자만.
+- 본문: 맨 끝(확인 방법 다음)에 `개발자 확인용 자료(첨부)` 한 줄과 `![개발자 확인용](101_4_확인.sql)`. `md_to_adf.py`가 이미지가 아닌 파일을 업로드해 파일 카드(`mediaGroup`)로 넣는다. 파일 이름은 노드 속성이라 기획자용 검사에 걸리지 않는다. 기존 첨부는 `![개발자 확인용](attachment:<ID>)`.
+- 되읽기: `check_adf.py --min-file 1`(파일 카드 수). `--min-media`는 인라인 이미지만 센다.
+- 노트: 같은 `.sql`을 `dev_note.py --attach`로 붙이고 `### 확인 명령·쿼리`에 코드 블록 사본을 둔다.
 
 ### 게시 — 마크다운으로 쓰고 한 번에 ADF로
 
@@ -142,9 +155,9 @@ acli jira workitem comment create --key PROJ-101 --body-file comment.adf.json
 acli jira workitem comment update --key PROJ-101 --id 10101 --body-adf comment.adf.json
 acli jira workitem edit --key PROJ-101 --description-file comment.adf.json --yes
 # 3) 되읽기: 노드·이미지 수·마크다운 누출·기획자용 검사 (걸리면 exit 1)
-acli jira workitem view PROJ-101 --fields comment --json 2>/dev/null | python3 $S/check_adf.py --comment 10101 --min-media 3   # 사람에게 요청·답이면 --min-mention 1 추가
+acli jira workitem view PROJ-101 --fields comment --json 2>/dev/null | python3 $S/check_adf.py --comment 10101 --min-media 3   # 사람에게 요청·답이면 --min-mention 1, 확인 쿼리 첨부면 --min-file 1 추가
 # 4) 개발자용 상세는 노트 보드에 (Jira 댓글 1건 = 노트 댓글 1건, 같은 댓글로 다시 실행하면 갱신)
-python3 $S/dev_note.py --key PROJ-101 --jira-comment 10101 --jira-md comment.md dev.md --attach 101_3_논리흐름_전후.png
+python3 $S/dev_note.py --key PROJ-101 --jira-comment 10101 --jira-md comment.md dev.md --attach 101_3_논리흐름_전후.png 101_4_확인.sql
 ```
 
 `comment.md` 예시 (Jira 기획자용 틀):
@@ -168,6 +181,9 @@ python3 $S/dev_note.py --key PROJ-101 --jira-comment 10101 --jira-md comment.md 
 - 이전 담당자 홈 > 배정 목록에서 그 항목이 미배정인지 봅니다.
 
 > [!NOTE] 결정 요청: 프로필 표시를 담당자별로 나눌지 정해 주세요. 선택지는 [앞서 드린 확인 요청](https://<your-site>/browse/PROJ-101?focusedCommentId=10100)에 있습니다.
+
+개발자 확인용 자료(첨부):
+![개발자 확인용](101_4_확인.sql)
 ````
 
 `dev.md` 예시 (노트 — 같은 Jira 댓글의 짝):

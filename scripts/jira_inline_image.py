@@ -114,15 +114,25 @@ def node(mid, alt, size, max_width):
                                                     "width": w, "height": h}}]}
 
 
+IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
+
+
+def file_node(mid):
+    # 이미지가 아닌 첨부(.sql 등)는 본문에 파일 카드로 넣는다. 파일 이름은 글자가 아니라 노드 속성이라 기획자용 검사에 걸리지 않는다.
+    return {"type": "mediaGroup", "content": [{"type": "media", "attrs": {"type": "file", "id": mid, "collection": ""}}]}
+
+
 def resolve(key, item, cred, max_width=760, existing=False):
-    """파일 경로(업로드) 또는 기존 첨부 ID → {file, attachmentId, mediaId, node}."""
+    """파일 경로(업로드) 또는 기존 첨부 ID → {file, attachmentId, mediaId, node}. 이미지가 아니면 파일 카드."""
     if existing:
-        att_id, name, size = item, attachment_name(item, cred), size_of(item, cred)
+        att_id, name = item, attachment_name(item, cred)
     else:
-        size = Image.open(item).size
         att = upload(key, item, cred)
         att_id, name = att["id"], att["filename"]
     mid = media_id(att_id, cred)
+    if not name.lower().endswith(IMAGE_EXT):
+        return {"file": name, "attachmentId": att_id, "mediaId": mid, "node": file_node(mid)}
+    size = size_of(att_id, cred) if existing else Image.open(item).size
     return {"file": name, "attachmentId": att_id, "mediaId": mid, "node": node(mid, name, size, max_width)}
 
 

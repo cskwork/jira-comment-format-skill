@@ -6,8 +6,8 @@ An agent skill (Claude Code, Codex, and similar agents) for writing Jira issue d
 
 - **Jira comments do not render Markdown.** If you post `.md` through `acli`, readers see literal `#`, `|---|`, and `**`. The skill writes Markdown and converts it to ADF, so headings, tables, panels, inline images, and mentions render properly.
 - **Planners can't read developer comments.** When every comment includes queries, flow diagrams, commit hashes, and build numbers, it grows past 1,500 characters and is full of jargon. The skill splits the content:
-  - **Jira** (for planners/QA): summary first, a request → result table, a before/after screenshot, a before/after data capture, how to verify, a requester mention, and any decision request.
-  - **Developer-note board** (for developers): queries, flow diagrams, API calls, commits, branches, builds, test counts, and rollback SQL. Each Jira ticket gets one note item and each Jira comment gets one note comment.
+  - **Jira** (for planners/QA): summary first, a request → result table, a before/after screenshot, a before/after data capture, how to verify, a requester mention, and any decision request. Read-only verification queries a developer can run are attached to the same comment as a `.sql` file card, never pasted into the body.
+  - **Developer-note board** (for developers): a copy of the queries, flow diagrams, API calls, commits, branches, builds, test counts, and rollback SQL. Each Jira ticket gets one note item and each Jira comment gets one note comment.
 - **Gates, not guidelines.** `planner_lint.py` rejects developer content before upload. `check_adf.py` re-checks what Jira actually stored. `jira_status_check.py` moves workflow states one step at a time, so a ticket can't jump to a production state.
 
 ## Setup

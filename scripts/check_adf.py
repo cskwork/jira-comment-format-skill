@@ -19,14 +19,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import planner_lint  # noqa: E402
 
 
-def walk(n, cnt, media, texts):
+def walk(n, cnt, media, texts, files=None, parent=None):
+    """media는 인라인 이미지(mediaSingle), files는 파일 카드(mediaGroup) 첨부."""
     if isinstance(n, dict):
         cnt[n.get("type")] += 1
         if n.get("type") == "media":
-            media.append(n["attrs"].get("alt") or n["attrs"].get("id"))
+            (files if parent == "mediaGroup" and files is not None else media).append(
+                n["attrs"].get("alt") or n["attrs"].get("id"))
         texts.append(n.get("text", ""))
         for c in n.get("content", []):
-            walk(c, cnt, media, texts)
+            walk(c, cnt, media, texts, files, n.get("type"))
 
 
 def main():
@@ -37,7 +39,8 @@ def main():
     p.add_argument("--max-chars", type=int, help=f"본문 글자 상한(기본: 댓글 {planner_lint.MAX_CHARS}, 이슈 설명 0=끄기)")
     planner_lint.add_args(p)
     p.add_argument("--min-media", type=int, default=0)
-    p.add_argument("--min-code", type=int, default=0, help="쿼리 등 복사용 codeBlock 최소 수")
+    p.add_argument("--min-code", type=int, default=0, help="이전 호환용. 개발자 확인용 쿼리는 --min-file로 첨부 파일 카드를 확인한다")
+    p.add_argument("--min-file", type=int, default=0, help="파일 카드(mediaGroup) 첨부 최소 수, 예: 개발자 확인용 쿼리 .sql")
     p.add_argument("--min-mention", type=int, default=0, help="특정 사용자에게 요청·답할 때 mention 노드 최소 수")
     a = p.parse_args()
     f = json.load(sys.stdin)["fields"]
@@ -49,8 +52,8 @@ def main():
             sys.exit(f"댓글 {a.comment} 없음")
         body, meta = c["body"], {"author": c["author"]["displayName"], "updated": c["updated"],
                                  "comments": len(f["comment"]["comments"])}
-    cnt, media, texts = collections.Counter(), [], []
-    walk(body, cnt, media, texts)
+    cnt, media, texts, files = collections.Counter(), [], [], []
+    walk(body, cnt, media, texts, files)
     leak = [s for s in ("**", "|---", '{"type"', "](http") if any(s in t for t in texts)]
     # Jira 글은 기획·QA용만. 개발자용 내용이 남아 있으면 실패
     max_chars = a.max_chars
@@ -59,8 +62,8 @@ def main():
     planner = planner_lint.lint(body, max_chars, a.allow, a.pattern)
     planner_lint.report(planner)
     leak += [name for name, _ in planner]
-    print(json.dumps({**meta, "nodes": dict(cnt), "media": media, "leak": leak}, ensure_ascii=False, indent=1))
-    if len(media) < a.min_media or cnt["codeBlock"] < a.min_code or cnt["mention"] < a.min_mention or leak:
+    print(json.dumps({**meta, "nodes": dict(cnt), "media": media, "files": files, "leak": leak}, ensure_ascii=False, indent=1))
+    if len(media) < a.min_media or len(files) < a.min_file or cnt["codeBlock"] < a.min_code or cnt["mention"] < a.min_mention or leak:
         sys.exit(1)
 
 
